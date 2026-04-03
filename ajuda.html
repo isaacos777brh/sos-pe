@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pedir Ajuda — SOS PE</title>
+    <link rel="stylesheet" href="../css/style.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=Barlow:wght@400;500;600&display=swap"
+        rel="stylesheet" />
+</head>
+
+<body class="page-sos">
+
+    <!-- HEADER -->
+    <header class="header header-dark">
+        <div class="header-inner">
+            <a href="index.html" class="back-btn"><i class="fa-solid fa-arrow-left"></i></a>
+            <div class="logo">
+                <span class="logo-icon"><i class="fa-solid fa-water"></i></span>
+                <div class="logo-text">
+                    <span class="logo-sos">SOS</span>
+                    <span class="logo-title">PE</span>
+                </div>
+            </div>
+            <div style="width:40px"></div>
+        </div>
+    </header>
+
+    <main class="sos-page">
+
+        <!-- ESTADO: PRONTO -->
+        <div class="sos-ready" id="sosReady">
+            <div class="sos-pulse-ring"></div>
+            <div class="sos-alert-banner">
+                <i class="fa-solid fa-phone-volume"></i>
+                Em caso de perigo imediato: <a href="tel:193"><strong>193</strong></a> (Bombeiros) · <a
+                    href="tel:199"><strong>199</strong></a> (Defesa Civil)
+            </div>
+
+            <div class="sos-content">
+                <p class="sos-subtitle">EMERGÊNCIA</p>
+                <h1 class="sos-title">Precisa de<br />Socorro?</h1>
+                <p class="sos-desc">Ao pressionar o botão, sua localização será capturada e enviada como urgência máxima
+                    para as equipes de resgate.</p>
+
+                <div class="sos-location-status" id="sosLocationStatus">
+                    <i class="fa-solid fa-spinner fa-spin"></i> Preparando localização...
+                </div>
+
+                <button class="sos-btn" id="sosBtnMain">
+                    <div class="sos-btn-inner">
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                        <span>PEDIR SOCORRO</span>
+                    </div>
+                </button>
+
+                <p class="sos-warning">⚠️ Use apenas em situações reais de emergência</p>
+            </div>
+        </div>
+
+        <!-- ESTADO: ENVIANDO -->
+        <div class="sos-sending hidden" id="sosSending">
+            <div class="sos-spinner-big">
+                <i class="fa-solid fa-spinner fa-spin"></i>
+            </div>
+            <h2>Enviando pedido de socorro...</h2>
+            <p>Por favor, aguarde. Sua localização está sendo registrada.</p>
+        </div>
+
+        <!-- ESTADO: ENVIADO -->
+        <div class="sos-sent hidden" id="sosSent">
+            <div class="sos-sent-icon"><i class="fa-solid fa-circle-check"></i></div>
+            <h2>Socorro Solicitado!</h2>
+            <p>Seu pedido de ajuda foi enviado com <strong>prioridade máxima</strong>. Equipes de emergência podem
+                verificar sua localização no mapa.</p>
+
+            <div class="sos-sent-info" id="sentInfo"></div>
+
+            <div class="emergency-contacts">
+                <h3><i class="fa-solid fa-phone"></i> Ligue agora também:</h3>
+                <a href="tel:193" class="emergency-call">
+                    <span class="ec-num">193</span>
+                    <span class="ec-name">Bombeiros</span>
+                </a>
+                <a href="tel:199" class="emergency-call">
+                    <span class="ec-num">199</span>
+                    <span class="ec-name">Defesa Civil</span>
+                </a>
+                <a href="tel:192" class="emergency-call">
+                    <span class="ec-num">192</span>
+                    <span class="ec-name">SAMU</span>
+                </a>
+            </div>
+
+            <div class="sos-sent-actions">
+                <a href="mapa.html" class="btn-outline"><i class="fa-solid fa-map"></i> Ver no Mapa</a>
+                <a href="index.html" class="btn-primary"><i class="fa-solid fa-house"></i> Início</a>
+            </div>
+        </div>
+
+        <!-- ESTADO: ERRO -->
+        <div class="sos-error-state hidden" id="sosErrorState">
+            <div class="sos-error-icon"><i class="fa-solid fa-circle-xmark"></i></div>
+            <h2>Falha no Envio</h2>
+            <p>Não foi possível registrar seu pedido de socorro. Por favor, ligue imediatamente:</p>
+            <a href="tel:193" class="emergency-call big">
+                <i class="fa-solid fa-phone-volume"></i>
+                <span class="ec-num">193</span>
+                <span class="ec-name">Bombeiros — 24h</span>
+            </a>
+            <button class="btn-primary" id="retryBtn"><i class="fa-solid fa-rotate-right"></i> Tentar Novamente</button>
+        </div>
+
+    </main>
+
+    <script type="module">
+        import { initFirebase, salvarOcorrencia } from '../js/firebase.js';
+        import { getLocation } from '../js/app.js';
+
+        initFirebase();
+
+        let coords = null;
+
+        // Pré-captura de localização
+        getLocation()
+            .then(pos => {
+                coords = pos;
+                document.getElementById('sosLocationStatus').innerHTML =
+                    `<i class="fa-solid fa-location-dot" style="color:#4ade80"></i> Localização pronta: ${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)}`;
+            })
+            .catch(() => {
+                document.getElementById('sosLocationStatus').innerHTML =
+                    `<i class="fa-solid fa-location-crosshairs" style="color:#fbbf24"></i> Localização não disponível — pedido será enviado assim mesmo`;
+            });
+
+        async function enviarSOS() {
+            document.getElementById('sosReady').classList.add('hidden');
+            document.getElementById('sosSending').classList.remove('hidden');
+
+            try {
+                await salvarOcorrencia({
+                    tipo: 'PEDIDO DE SOCORRO',
+                    urgencia: 'alta',
+                    descricao: '🆘 PEDIDO DE SOCORRO URGENTE — usuário acionou o botão de emergência.',
+                    lat: coords?.lat || null,
+                    lng: coords?.lng || null,
+                    ehSOS: true,
+                });
+
+                document.getElementById('sosSending').classList.add('hidden');
+                document.getElementById('sosSent').classList.remove('hidden');
+
+                document.getElementById('sentInfo').innerHTML = coords
+                    ? `<i class="fa-solid fa-location-dot"></i> Localização registrada: ${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`
+                    : `<i class="fa-solid fa-location-crosshairs"></i> Sem coordenadas GPS — ligue para os bombeiros agora`;
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('sosSending').classList.add('hidden');
+                document.getElementById('sosErrorState').classList.remove('hidden');
+            }
+        }
+
+        document.getElementById('sosBtnMain').addEventListener('click', enviarSOS);
+        document.getElementById('retryBtn')?.addEventListener('click', () => {
+            document.getElementById('sosErrorState').classList.add('hidden');
+            document.getElementById('sosReady').classList.remove('hidden');
+        });
+    </script>
+</body>
+
+</html>

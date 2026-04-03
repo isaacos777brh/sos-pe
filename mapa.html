@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mapa — SOS PE</title>
+    <link rel="stylesheet" href="../css/style.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=Barlow:wght@400;500;600&display=swap"
+        rel="stylesheet" />
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        /* Estilos específicos do mapa — dentro do HTML para garantir que o Leaflet carregue corretamente */
+        #map {
+            height: calc(100vh - 56px - 60px);
+            width: 100%;
+        }
+
+        .leaflet-popup-content-wrapper {
+            border-radius: 12px;
+            font-family: 'Barlow', sans-serif;
+        }
+
+        .leaflet-popup-content {
+            margin: 14px 16px;
+        }
+
+        .popup-tipo {
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 4px;
+        }
+
+        .popup-desc {
+            color: #555;
+            font-size: 0.88rem;
+            margin-bottom: 6px;
+        }
+
+        .popup-time {
+            font-size: 0.78rem;
+            color: #888;
+        }
+
+        .popup-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .badge-alta {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .badge-media {
+            background: #fef9c3;
+            color: #ca8a04;
+        }
+
+        .badge-baixa {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .map-legend {
+            position: absolute;
+            bottom: 80px;
+            right: 10px;
+            z-index: 1000;
+            background: white;
+            border-radius: 10px;
+            padding: 10px 14px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+            font-family: 'Barlow', sans-serif;
+            font-size: 0.82rem;
+        }
+
+        .legend-title {
+            font-weight: 700;
+            margin-bottom: 6px;
+            font-size: 0.85rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 4px 0;
+        }
+
+        .legend-dot {
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            border: 2px solid rgba(0, 0, 0, 0.2);
+        }
+
+        .dot-red {
+            background: #ef4444;
+        }
+
+        .dot-yellow {
+            background: #eab308;
+        }
+
+        .dot-green {
+            background: #22c55e;
+        }
+
+        .map-stats-bar {
+            display: flex;
+            gap: 8px;
+            padding: 8px 12px;
+            background: #0f172a;
+            overflow-x: auto;
+        }
+
+        .map-stat {
+            flex: 0 0 auto;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 6px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .map-stat span {
+            color: #fff;
+            font-family: 'Barlow', sans-serif;
+            font-size: 0.82rem;
+        }
+
+        .map-stat strong {
+            color: #fff;
+            font-weight: 700;
+        }
+
+        .dot-inline {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .map-filter-bar {
+            display: flex;
+            gap: 6px;
+            padding: 8px 12px;
+            background: #fff;
+            border-bottom: 1px solid #e2e8f0;
+            overflow-x: auto;
+        }
+
+        .filter-btn {
+            flex: 0 0 auto;
+            padding: 4px 12px;
+            border-radius: 20px;
+            border: 2px solid #e2e8f0;
+            background: #fff;
+            font-family: 'Barlow', sans-serif;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .filter-btn.active-all {
+            border-color: #0f172a;
+            background: #0f172a;
+            color: #fff;
+        }
+
+        .filter-btn.active-alta {
+            border-color: #ef4444;
+            background: #ef4444;
+            color: #fff;
+        }
+
+        .filter-btn.active-media {
+            border-color: #eab308;
+            background: #eab308;
+            color: #fff;
+        }
+
+        .filter-btn.active-baixa {
+            border-color: #22c55e;
+            background: #22c55e;
+            color: #fff;
+        }
+
+        .no-coords-notice {
+            display: none;
+            position: absolute;
+            top: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1001;
+            background: rgba(15, 23, 42, 0.85);
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+
+<body class="page-map">
+
+    <header class="header">
+        <div class="header-inner">
+            <a href="index.html" class="back-btn"><i class="fa-solid fa-arrow-left"></i></a>
+            <div class="logo">
+                <span class="logo-icon"><i class="fa-solid fa-water"></i></span>
+                <div class="logo-text">
+                    <span class="logo-sos">SOS</span>
+                    <span class="logo-title">PE</span>
+                </div>
+            </div>
+            <button class="map-refresh-btn" id="refreshBtn" title="Atualizar"><i
+                    class="fa-solid fa-rotate-right"></i></button>
+        </div>
+    </header>
+
+    <!-- Stats bar -->
+    <div class="map-stats-bar" id="mapStatsBar">
+        <div class="map-stat"><span id="statAll">— total</span></div>
+        <div class="map-stat"><span class="dot-inline dot-red" style="background:#ef4444"></span><span id="statAlta">—
+                urgentes</span></div>
+        <div class="map-stat"><span class="dot-inline" style="background:#eab308"></span><span id="statMedia">—
+                médias</span></div>
+        <div class="map-stat"><span class="dot-inline" style="background:#22c55e"></span><span id="statBaixa">—
+                leves</span></div>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="map-filter-bar">
+        <button class="filter-btn active-all" data-filter="all" id="filterAll">Todos</button>
+        <button class="filter-btn" data-filter="alta" id="filterAlta">🔴 Urgente</button>
+        <button class="filter-btn" data-filter="media" id="filterMedia">🟡 Médio</button>
+        <button class="filter-btn" data-filter="baixa" id="filterBaixa">🟢 Leve</button>
+    </div>
+
+    <!-- Map container -->
+    <div style="position:relative">
+        <div id="map"></div>
+
+        <!-- Legend -->
+        <div class="map-legend">
+            <div class="legend-title"><i class="fa-solid fa-circle-info"></i> Legenda</div>
+            <div class="legend-item"><span class="legend-dot dot-red"></span> Urgente</div>
+            <div class="legend-item"><span class="legend-dot dot-yellow"></span> Médio</div>
+            <div class="legend-item"><span class="legend-dot dot-green"></span> Leve</div>
+        </div>
+
+        <div class="no-coords-notice" id="noCoordsNotice">
+            <i class="fa-solid fa-triangle-exclamation"></i> Algumas ocorrências não têm coordenadas e não aparecem no
+            mapa
+        </div>
+    </div>
+
+    <!-- Bottom nav -->
+    <nav class="map-bottom-nav">
+        <a href="ajuda.html" class="map-nav-btn red"><i class="fa-solid fa-circle-exclamation"></i> Pedir Ajuda</a>
+        <a href="reportar.html" class="map-nav-btn yellow"><i class="fa-solid fa-triangle-exclamation"></i> Reportar</a>
+    </nav>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script type="module">
+        import { initFirebase, getOcorrencias } from '../js/firebase.js';
+        import { timeAgo, urgencyLabel } from '../js/app.js';
+
+        initFirebase();
+
+        // Centro de Pernambuco (Recife)
+        const MAP_CENTER = [-8.0539, -34.8811];
+        const MAP_ZOOM = 11;
+
+        const map = L.map('map').setView(MAP_CENTER, MAP_ZOOM);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19,
+        }).addTo(map);
+
+        let allMarkers = [];
+        let ocorrencias = [];
+
+        function getMarkerColor(urgencia) {
+            if (urgencia === 'alta') return '#ef4444';
+            if (urgencia === 'media') return '#eab308';
+            return '#22c55e';
+        }
+
+        function createMarkerIcon(urgencia) {
+            const color = getMarkerColor(urgencia);
+            const size = urgencia === 'alta' ? 22 : 18;
+            return L.divIcon({
+                className: '',
+                html: `<div style="
+          width:${size}px; height:${size}px;
+          background:${color};
+          border:3px solid white;
+          border-radius:50%;
+          box-shadow:0 2px 8px rgba(0,0,0,0.35);
+          ${urgencia === 'alta' ? 'animation: pulse-marker 1.5s infinite;' : ''}
+        "></div>
+        <style>
+          @keyframes pulse-marker {
+            0%,100% { transform: scale(1); box-shadow: 0 0 0 0 ${color}66; }
+            50% { transform: scale(1.15); box-shadow: 0 0 0 8px ${color}00; }
+          }
+        </style>`,
+                iconSize: [size, size],
+                iconAnchor: [size / 2, size / 2],
+            });
+        }
+
+        function renderMarkers(filter = 'all') {
+            // Remove todos
+            allMarkers.forEach(m => map.removeLayer(m));
+            allMarkers = [];
+
+            let filtered = filter === 'all' ? ocorrencias : ocorrencias.filter(o => o.urgencia === filter);
+            let hasNoCoordsItem = false;
+
+            filtered.forEach(doc => {
+                if (!doc.lat || !doc.lng) { hasNoCoordsItem = true; return; }
+
+                const marker = L.marker([doc.lat, doc.lng], { icon: createMarkerIcon(doc.urgencia) });
+
+                const badgeClass = `badge-${doc.urgencia || 'baixa'}`;
+                const label = urgencyLabel(doc.urgencia);
+                const time = doc.criadoEm ? timeAgo(doc.criadoEm.toDate()) : 'agora';
+
+                marker.bindPopup(`
+          <div class="popup-tipo">${doc.tipo || 'Ocorrência'}</div>
+          <span class="popup-badge ${badgeClass}">${label}</span>
+          <div class="popup-desc">${doc.descricao || 'Sem descrição'}</div>
+          <div class="popup-time"><i class="fa-regular fa-clock"></i> ${time}</div>
+          ${doc.imagemURL ? `<img src="${doc.imagemURL}" style="width:100%;border-radius:8px;margin-top:8px;max-height:120px;object-fit:cover" />` : ''}
+        `);
+
+                marker.addTo(map);
+                allMarkers.push(marker);
+            });
+
+            document.getElementById('noCoordsNotice').style.display = hasNoCoordsItem ? 'block' : 'none';
+        }
+
+        function updateStats() {
+            const alta = ocorrencias.filter(o => o.urgencia === 'alta').length;
+            const media = ocorrencias.filter(o => o.urgencia === 'media').length;
+            const baixa = ocorrencias.filter(o => o.urgencia === 'baixa' || !o.urgencia).length;
+
+            document.getElementById('statAll').textContent = `${ocorrencias.length} total`;
+            document.getElementById('statAlta').textContent = `${alta} urgentes`;
+            document.getElementById('statMedia').textContent = `${media} médias`;
+            document.getElementById('statBaixa').textContent = `${baixa} leves`;
+        }
+
+        async function loadMap() {
+            try {
+                ocorrencias = await getOcorrencias(200);
+                updateStats();
+                renderMarkers('all');
+
+                // Centralizar no primeiro ponto com coordenadas
+                const first = ocorrencias.find(o => o.lat && o.lng);
+                if (first) map.setView([first.lat, first.lng], MAP_ZOOM);
+
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        // Filtros
+        let currentFilter = 'all';
+        const filterBtns = document.querySelectorAll('.filter-btn');
+
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                currentFilter = btn.dataset.filter;
+                filterBtns.forEach(b => {
+                    b.className = 'filter-btn';
+                });
+                btn.classList.add(`active-${currentFilter}`);
+                renderMarkers(currentFilter);
+            });
+        });
+
+        document.getElementById('refreshBtn').addEventListener('click', () => {
+            loadMap();
+        });
+
+        // Localização do usuário
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(pos => {
+                const { latitude, longitude } = pos.coords;
+                L.circleMarker([latitude, longitude], {
+                    radius: 10, color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.4, weight: 3
+                }).addTo(map).bindPopup('<strong>Você está aqui</strong>');
+            });
+        }
+
+        loadMap();
+    </script>
+</body>
+
+</html>

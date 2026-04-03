@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SOS PE</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=Barlow:wght@400;500;600&display=swap"
+        rel="stylesheet" />
+</head>
+
+<body class="page-home">
+
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-inner">
+            <div class="logo">
+                <span class="logo-icon"><i class="fa-solid fa-water"></i></span>
+                <div class="logo-text">
+                    <span class="logo-sos">SOS</span>
+                    <span class="logo-title">PE</span>
+                </div>
+            </div>
+            <span class="header-badge">🔴 AO VIVO</span>
+        </div>
+    </header>
+
+    <!-- HERO -->
+    <section class="hero">
+        <div class="rain-overlay"></div>
+        <div class="hero-content">
+            <p class="hero-sub">Pernambuco em alerta</p>
+            <h1 class="hero-title">Reporte. Peça Ajuda.<br />Salve Vidas.</h1>
+            <p class="hero-desc">Plataforma de emergência para monitorar alagamentos e deslizamentos em tempo real.</p>
+        </div>
+        <div class="hero-stats" id="heroStats">
+            <div class="stat-card">
+                <span class="stat-num" id="statTotal">—</span>
+                <span class="stat-label">Ocorrências</span>
+            </div>
+            <div class="stat-card urgent">
+                <span class="stat-num" id="statUrgent">—</span>
+                <span class="stat-label">Urgentes</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-num" id="statToday">—</span>
+                <span class="stat-label">Hoje</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- MAIN ACTIONS -->
+    <main class="main-actions">
+        <h2 class="section-title">O que você precisa?</h2>
+        <div class="action-grid">
+
+            <!-- PEDIR AJUDA (destaque máximo) -->
+            <a href="ajuda.html" class="action-card card-sos">
+                <div class="card-icon-wrap">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                </div>
+                <div class="card-body">
+                    <h3>Pedir Ajuda</h3>
+                    <p>Estou em perigo e preciso de socorro imediato</p>
+                </div>
+                <span class="card-arrow"><i class="fa-solid fa-arrow-right"></i></span>
+            </a>
+
+            <!-- REPORTAR PROBLEMA -->
+            <a href="reportar.html" class="action-card card-report">
+                <div class="card-icon-wrap">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <div class="card-body">
+                    <h3>Reportar Problema</h3>
+                    <p>Informar alagamento, deslizamento ou área de risco</p>
+                </div>
+                <span class="card-arrow"><i class="fa-solid fa-arrow-right"></i></span>
+            </a>
+
+            <!-- VER MAPA -->
+            <a href="mapa.html" class="action-card card-map">
+                <div class="card-icon-wrap">
+                    <i class="fa-solid fa-map-location-dot"></i>
+                </div>
+                <div class="card-body">
+                    <h3>Ver Mapa</h3>
+                    <p>Visualizar ocorrências em tempo real no mapa</p>
+                </div>
+                <span class="card-arrow"><i class="fa-solid fa-arrow-right"></i></span>
+            </a>
+
+        </div>
+    </main>
+
+    <!-- FEED DE OCORRÊNCIAS RECENTES -->
+    <section class="feed-section">
+        <div class="feed-header">
+            <h2 class="section-title">Ocorrências Recentes</h2>
+            <a href="mapa.html" class="ver-todas">Ver todas <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
+        <div class="feed-list" id="feedList">
+            <div class="feed-loading"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <p><i class="fa-solid fa-heart" style="color:#e53e3e"></i> Feito para Pernambuco em situação de emergência</p>
+        <p class="footer-sub">Em caso de perigo imediato, ligue <strong>193</strong> (Bombeiros) ou <strong>199</strong>
+            (Defesa Civil)</p>
+    </footer>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initFirebase, getOcorrencias } from '../js/firebase.js';
+        import { timeAgo, urgencyLabel, urgencyClass, tipoIcon } from '../js/app.js';
+
+        initFirebase();
+
+        // Stats e feed
+        async function loadHome() {
+            try {
+                const docs = await getOcorrencias(10);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                let total = 0, urgent = 0, todayCount = 0;
+                const feedList = document.getElementById('feedList');
+                feedList.innerHTML = '';
+
+                if (docs.length === 0) {
+                    feedList.innerHTML = '<p class="feed-empty"><i class="fa-solid fa-circle-check"></i> Nenhuma ocorrência registrada.</p>';
+                }
+
+                docs.forEach(d => {
+                    total++;
+                    if (d.urgencia === 'alta') urgent++;
+                    if (d.criadoEm && d.criadoEm.toDate() >= today) todayCount++;
+
+                    // Feed card
+                    const card = document.createElement('div');
+                    card.className = `feed-card priority-${d.urgencia || 'baixa'}`;
+                    card.innerHTML = `
+            <div class="feed-card-icon ${urgencyClass(d.urgencia)}">
+              <i class="${tipoIcon(d.tipo)}"></i>
+            </div>
+            <div class="feed-card-info">
+              <div class="feed-card-top">
+                <span class="feed-tipo">${d.tipo || 'Ocorrência'}</span>
+                <span class="badge badge-${urgencyClass(d.urgencia)}">${urgencyLabel(d.urgencia)}</span>
+              </div>
+              <p class="feed-desc">${d.descricao || 'Sem descrição'}</p>
+              <span class="feed-time"><i class="fa-regular fa-clock"></i> ${d.criadoEm ? timeAgo(d.criadoEm.toDate()) : 'agora'}</span>
+            </div>
+          `;
+                    feedList.appendChild(card);
+                });
+
+                document.getElementById('statTotal').textContent = total;
+                document.getElementById('statUrgent').textContent = urgent;
+                document.getElementById('statToday').textContent = todayCount;
+
+            } catch (e) {
+                console.error(e);
+                document.getElementById('feedList').innerHTML = '<p class="feed-empty">Erro ao carregar ocorrências.</p>';
+            }
+        }
+
+        loadHome();
+    </script>
+</body>
+
+</html>

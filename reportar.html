@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reportar Problema — SOS PE</title>
+    <link rel="stylesheet" href="../css/style.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=Barlow:wght@400;500;600&display=swap"
+        rel="stylesheet" />
+</head>
+
+<body class="page-form">
+
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-inner">
+            <a href="index.html" class="back-btn"><i class="fa-solid fa-arrow-left"></i></a>
+            <div class="logo">
+                <span class="logo-icon"><i class="fa-solid fa-water"></i></span>
+                <div class="logo-text">
+                    <span class="logo-sos">SOS</span>
+                    <span class="logo-title">PE</span>
+                </div>
+            </div>
+            <div style="width:40px"></div>
+        </div>
+    </header>
+
+    <main class="form-page">
+        <div class="form-hero">
+            <div class="form-hero-icon yellow"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <h1>Reportar Problema</h1>
+            <p>Informe o que está acontecendo. Sua localização será capturada automaticamente.</p>
+        </div>
+
+        <form class="ocorrencia-form" id="reportForm" novalidate>
+
+            <!-- TIPO -->
+            <div class="form-group">
+                <label class="form-label">Tipo de Ocorrência <span class="required">*</span></label>
+                <div class="tipo-grid">
+                    <label class="tipo-option">
+                        <input type="radio" name="tipo" value="Alagamento" required />
+                        <span class="tipo-card">
+                            <i class="fa-solid fa-house-flood-water"></i>
+                            <span>Alagamento</span>
+                        </span>
+                    </label>
+                    <label class="tipo-option">
+                        <input type="radio" name="tipo" value="Deslizamento" />
+                        <span class="tipo-card">
+                            <i class="fa-solid fa-mountain-city"></i>
+                            <span>Deslizamento</span>
+                        </span>
+                    </label>
+                    <label class="tipo-option">
+                        <input type="radio" name="tipo" value="Área de Risco" />
+                        <span class="tipo-card">
+                            <i class="fa-solid fa-circle-exclamation"></i>
+                            <span>Área de Risco</span>
+                        </span>
+                    </label>
+                    <label class="tipo-option">
+                        <input type="radio" name="tipo" value="Outro" />
+                        <span class="tipo-card">
+                            <i class="fa-solid fa-ellipsis"></i>
+                            <span>Outro</span>
+                        </span>
+                    </label>
+                </div>
+                <span class="field-error" id="tipoError">Selecione o tipo de ocorrência.</span>
+            </div>
+
+            <!-- URGÊNCIA -->
+            <div class="form-group">
+                <label class="form-label" for="urgencia">Nível de Urgência <span class="required">*</span></label>
+                <div class="select-wrap">
+                    <select id="urgencia" name="urgencia" class="form-select" required>
+                        <option value="">Selecione...</option>
+                        <option value="baixa">🟢 Baixa — Situação controlável</option>
+                        <option value="media">🟡 Média — Requer atenção</option>
+                        <option value="alta">🔴 Alta — Perigo imediato</option>
+                    </select>
+                    <i class="fa-solid fa-chevron-down select-arrow"></i>
+                </div>
+                <span class="field-error" id="urgenciaError">Selecione o nível de urgência.</span>
+            </div>
+
+            <!-- DESCRIÇÃO -->
+            <div class="form-group">
+                <label class="form-label" for="descricao">Descrição <span class="required">*</span></label>
+                <textarea id="descricao" name="descricao" class="form-textarea" rows="4"
+                    placeholder="Descreva o que está acontecendo. Ex: Rua alagada, água acima do tornozelo, moradores ilhados..."
+                    required maxlength="500"></textarea>
+                <div class="char-count"><span id="charCount">0</span>/500</div>
+                <span class="field-error" id="descricaoError">A descrição é obrigatória (mínimo 10 caracteres).</span>
+            </div>
+
+            <!-- IMAGEM -->
+            <div class="form-group">
+                <label class="form-label">Foto (opcional)</label>
+                <div class="upload-area" id="uploadArea">
+                    <input type="file" id="imagemInput" accept="image/*" capture="environment" hidden />
+                    <div class="upload-placeholder" id="uploadPlaceholder">
+                        <i class="fa-solid fa-camera"></i>
+                        <span>Tirar foto ou escolher da galeria</span>
+                    </div>
+                    <img id="previewImg" class="upload-preview hidden" alt="Preview" />
+                    <button type="button" class="remove-img hidden" id="removeImg"><i
+                            class="fa-solid fa-xmark"></i></button>
+                </div>
+            </div>
+
+            <!-- LOCALIZAÇÃO -->
+            <div class="form-group">
+                <label class="form-label">Localização</label>
+                <div class="location-box" id="locationBox">
+                    <div class="location-loading" id="locationLoading">
+                        <i class="fa-solid fa-spinner fa-spin"></i> Capturando localização...
+                    </div>
+                    <div class="location-success hidden" id="locationSuccess">
+                        <i class="fa-solid fa-location-dot"></i>
+                        <div>
+                            <strong>Localização capturada!</strong>
+                            <span id="locationCoords"></span>
+                        </div>
+                    </div>
+                    <div class="location-error hidden" id="locationError">
+                        <i class="fa-solid fa-location-crosshairs"></i>
+                        <div>
+                            <strong>Localização não disponível</strong>
+                            <span>O relatório será enviado sem coordenadas.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUBMIT -->
+            <button type="submit" class="btn-submit" id="submitBtn">
+                <span class="btn-text"><i class="fa-solid fa-paper-plane"></i> Enviar Relatório</span>
+                <span class="btn-loading hidden"><i class="fa-solid fa-spinner fa-spin"></i> Enviando...</span>
+            </button>
+
+        </form>
+
+        <!-- SUCCESS MESSAGE -->
+        <div class="success-screen hidden" id="successScreen">
+            <div class="success-icon"><i class="fa-solid fa-circle-check"></i></div>
+            <h2>Relatório Enviado!</h2>
+            <p>Sua ocorrência foi registrada com sucesso e já aparece no mapa.</p>
+            <div class="success-actions">
+                <a href="mapa.html" class="btn-outline"><i class="fa-solid fa-map"></i> Ver no Mapa</a>
+                <a href="index.html" class="btn-primary"><i class="fa-solid fa-house"></i> Início</a>
+            </div>
+        </div>
+
+    </main>
+
+    <script type="module">
+        import { initFirebase, salvarOcorrencia, uploadImagem } from '../js/firebase.js';
+        import { getLocation } from '../js/app.js';
+
+        initFirebase();
+
+        let coords = null;
+
+        // Captura de localização automática
+        getLocation()
+            .then(pos => {
+                coords = pos;
+                document.getElementById('locationLoading').classList.add('hidden');
+                document.getElementById('locationSuccess').classList.remove('hidden');
+                document.getElementById('locationCoords').textContent =
+                    `${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)}`;
+            })
+            .catch(() => {
+                document.getElementById('locationLoading').classList.add('hidden');
+                document.getElementById('locationError').classList.remove('hidden');
+            });
+
+        // Contador de caracteres
+        const descEl = document.getElementById('descricao');
+        const countEl = document.getElementById('charCount');
+        descEl.addEventListener('input', () => countEl.textContent = descEl.value.length);
+
+        // Upload de imagem
+        const uploadArea = document.getElementById('uploadArea');
+        const imagemInput = document.getElementById('imagemInput');
+        const preview = document.getElementById('previewImg');
+        const placeholder = document.getElementById('uploadPlaceholder');
+        const removeBtn = document.getElementById('removeImg');
+
+        uploadArea.addEventListener('click', (e) => {
+            if (e.target !== removeBtn && !removeBtn.contains(e.target)) imagemInput.click();
+        });
+
+        imagemInput.addEventListener('change', () => {
+            const file = imagemInput.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                preview.src = e.target.result;
+                preview.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+                removeBtn.classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        });
+
+        removeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            imagemInput.value = '';
+            preview.classList.add('hidden');
+            placeholder.classList.remove('hidden');
+            removeBtn.classList.add('hidden');
+        });
+
+        // Validação e envio
+        const form = document.getElementById('reportForm');
+
+        function showError(id, show) {
+            document.getElementById(id).style.display = show ? 'block' : 'none';
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            let valid = true;
+
+            const tipo = form.querySelector('input[name="tipo"]:checked')?.value;
+            const urgencia = document.getElementById('urgencia').value;
+            const descricao = document.getElementById('descricao').value.trim();
+
+            showError('tipoError', !tipo);
+            showError('urgenciaError', !urgencia);
+            showError('descricaoError', !descricao || descricao.length < 10);
+
+            if (!tipo || !urgencia || !descricao || descricao.length < 10) return;
+
+            // Loading state
+            const btn = document.getElementById('submitBtn');
+            btn.querySelector('.btn-text').classList.add('hidden');
+            btn.querySelector('.btn-loading').classList.remove('hidden');
+            btn.disabled = true;
+
+            try {
+                let imagemURL = null;
+                if (imagemInput.files[0]) {
+                    imagemURL = await uploadImagem(imagemInput.files[0]);
+                }
+
+                await salvarOcorrencia({
+                    tipo,
+                    urgencia,
+                    descricao,
+                    imagemURL,
+                    lat: coords?.lat || null,
+                    lng: coords?.lng || null,
+                });
+
+                form.classList.add('hidden');
+                document.getElementById('successScreen').classList.remove('hidden');
+
+            } catch (err) {
+                console.error(err);
+                alert('Erro ao enviar. Tente novamente.');
+                btn.querySelector('.btn-text').classList.remove('hidden');
+                btn.querySelector('.btn-loading').classList.add('hidden');
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+
+</html>
